@@ -1,64 +1,132 @@
-// Copyright 2018 The Flutter team. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 import 'package:flutter/material.dart';
-import 'package:english_words/english_words.dart';
+import 'package:flutter/services.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(new MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: new MyApp(),
+));
 
 class MyApp extends StatelessWidget {
+  String _name;
+  String _email;
+  String _password;
+  final _sizeTextBlack = const TextStyle(fontSize: 20.0, color: Colors.black);
+  final _sizeTextWhite = const TextStyle(fontSize: 20.0, color: Colors.white);
+  final formKey = new GlobalKey<FormState>();
+  BuildContext _context;
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    _context = context;
+    return new MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Name Generator',
-      home: RandomWords(),
-    );
-  }
-}
-
-class RandomWords extends StatefulWidget {
-  @override
-  _RandomWordsState createState() => _RandomWordsState();
-}
-
-class _RandomWordsState extends State<RandomWords> {
-  final _suggestions = <WordPair>[];
-  final  _biggerFont = TextStyle(fontSize: 18.0);
-  Widget _buildSuggestions() {
-    return ListView.builder(
-        padding: EdgeInsets.all(16.0),
-        itemBuilder: /*1*/ (context, i) {
-          if (i.isOdd) return Divider(); /*2*/
-
-          final index = i ~/ 2; /*3*/
-          if (index >= _suggestions.length) {
-            _suggestions.addAll(generateWordPairs().take(10)); /*4*/
-          }
-          return _buildRow(_suggestions[index]);
-        });
-  }
-
-  Widget _buildRow(WordPair pair) {
-    return ListTile(
-      title: Text(
-        pair.asPascalCase,
-        style: _biggerFont,
+      home: new Scaffold(
+        body: new Center(
+          child: new Form(
+              key: formKey,
+              child: new Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  new Container(
+                    child: new TextFormField(
+                      decoration: new InputDecoration(labelText: "Логин"),
+                      keyboardType: TextInputType.name,
+                      maxLines: 1,
+                      style: _sizeTextBlack,
+                      onSaved: (val) => _name = val,
+                    ),
+                    width: 300.0,
+                  ),
+                  new Container(
+                    child: new TextFormField(
+                      decoration: new InputDecoration(labelText: "Email"),
+                      keyboardType: TextInputType.emailAddress,
+                      maxLines: 1,
+                      style: _sizeTextBlack,
+                      onSaved: (val) => _email = val,
+                      validator: (val) =>
+                      !val.contains("@") ? 'Неверный Email.' : null,
+                    ),
+                    width: 300.0,
+                  ),
+                  new Container(
+                    child: new TextFormField(
+                      decoration: new InputDecoration(labelText: "Пароль"),
+                      obscureText: true,
+                      maxLines: 1,
+                      validator: (val) =>
+                      val.length < 6 ? 'Пароль слишком короткий.' : null,
+                      onSaved: (val) => _password = val,
+                      style: _sizeTextBlack,
+                    ),
+                    width: 300.0,
+                    padding: new EdgeInsets.only(top: 10.0),
+                  ),
+                  new Padding(
+                    padding: new EdgeInsets.only(top: 25.0),
+                    child: new MaterialButton(
+                      onPressed: submit,
+                      color: Theme.of(context).accentColor,
+                      height: 50.0,
+                      minWidth: 150.0,
+                      child: new Text(
+                        "Войти",
+                        style: _sizeTextWhite,
+                      ),
+                    ),
+                  )
+                ],
+              )),
+        ),
       ),
     );
   }
+
+  void submit() {
+    final form = formKey.currentState;
+    if (form.validate()) {
+      form.save();
+      performLogin();
+    }
+  }
+
+  void performLogin() {
+    hideKeyboard();
+    Navigator.push(
+        _context,
+        new MaterialPageRoute(
+            builder: (context) => new SecondScreen(_name, _email, _password)));
+  }
+
+  void hideKeyboard() {
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+  }
+}
+
+class SecondScreen extends StatelessWidget {
+  String _name;
+  String _email;
+  String _password;
+  final _sizeTextBlack = const TextStyle(fontSize: 20.0, color: Colors.black);
+
+  SecondScreen(String name, String email, String password) {
+    _name = name;
+    _email = email;
+    _password = password;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Генератор слов'),
-        textTheme: TextTheme(
-            headline6:TextStyle (fontSize: 22.0, fontFamily: 'GothamPro',  fontWeight: FontWeight.bold, color: Color( 0xFF282336) )
+    return new Scaffold(
+        appBar: new AppBar(
+          title: new Text("Приветствие"),
         ),
-        backgroundColor: Color(0xFFB0A3CB),
-      ),
-      body: _buildSuggestions(),
+        body: new Center(
+          child: new Text(
+            "Добро пожаловать, $_name",
+            style: _sizeTextBlack,
+          ),
+        )
     );
   }
 }
